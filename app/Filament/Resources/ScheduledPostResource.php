@@ -5,22 +5,23 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ScheduledPostResource\Pages;
 use App\Models\BrowserProfile;
 use App\Models\ScheduledPost;
+use BackedEnum;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 
 class ScheduledPostResource extends Resource
 {
     protected static ?string $model = ScheduledPost::class;
-    protected static ?string $navigationIcon = 'heroicon-o-clock';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-clock';
     protected static ?string $navigationLabel = 'Hẹn giờ đăng';
     protected static ?string $modelLabel = 'Bài hẹn giờ';
-    protected static ?string $navigationGroup = 'Tự động hóa';
+    protected static string | \UnitEnum | null $navigationGroup = '🤖 Tự động hóa';
     protected static ?int $navigationSort = 2;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $form): Schema
     {
         return $form->schema([
             Forms\Components\Select::make('browser_profile_id')
