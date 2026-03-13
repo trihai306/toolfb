@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use App\Models\CommentCampaign;
+use App\Models\FacebookGroup;
+use App\Models\ScheduledPost;
 
 class BrowserProfile extends Model
 {
@@ -47,6 +50,16 @@ class BrowserProfile extends Model
     public function campaigns(): HasMany
     {
         return $this->hasMany(CommentCampaign::class, 'extension_id', 'extension_id');
+    }
+
+    public function scheduledPosts(): HasMany
+    {
+        return $this->hasMany(ScheduledPost::class);
+    }
+
+    public function groups(): HasMany
+    {
+        return $this->hasMany(FacebookGroup::class);
     }
 
     // === Token helpers ===

@@ -29,4 +29,10 @@ Route::prefix('extension')
         Route::get('/groups', [ExtensionController::class, 'getGroups']);
         Route::post('/groups/sync', [ExtensionController::class, 'syncGroups']);
         Route::delete('/groups/{groupId}', [ExtensionController::class, 'deleteGroup']);
+
+        // Scheduled Posts
+        Route::get('/scheduled-posts', [ExtensionController::class, 'getScheduledPosts']);
+        Route::post('/scheduled-posts', [ExtensionController::class, 'createScheduledPost']);
+        Route::put('/scheduled-posts/{id}/status', [ExtensionController::class, 'updateScheduledPostStatus']);
+        Route::delete('/scheduled-posts/{id}', [ExtensionController::class, 'cancelScheduledPost']);
     });

@@ -9,6 +9,7 @@ use App\Models\CommentCampaign;
 use App\Models\CommentLog;
 use App\Models\CommentTemplate;
 use App\Models\FacebookGroup;
+use App\Models\ScheduledPost;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -443,6 +444,103 @@ class ExtensionController extends Controller
         return response()->json([
             'success' => true,
             'message' => "Command '{$validated['command']}' broadcasted to {$validated['extension_id']}",
+        ]);
+    }
+
+    // ===========================
+    // SCHEDULED POSTS
+    // ===========================
+
+    /**
+     * GET /api/extension/scheduled-posts
+     */
+    public function getScheduledPosts(Request $request)
+    {
+        $profile = $request->attributes->get('profile');
+
+        $posts = ScheduledPost::forProfile($profile->id)
+            ->orderBy('scheduled_at', 'asc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'posts' => $posts,
+        ]);
+    }
+
+    /**
+     * POST /api/extension/scheduled-posts
+     */
+    public function createScheduledPost(Request $request)
+    {
+        $profile = $request->attributes->get('profile');
+
+        $validated = $request->validate([
+            'content' => 'required|string',
+            'images' => 'nullable|array',
+            'group_ids' => 'required|array|min:1',
+            'group_ids.*' => 'string',
+            'settings' => 'nullable|array',
+            'scheduled_at' => 'required|date|after:now',
+        ]);
+
+        $post = ScheduledPost::create([
+            'browser_profile_id' => $profile->id,
+            'content' => $validated['content'],
+            'images' => $validated['images'] ?? [],
+            'group_ids' => $validated['group_ids'],
+            'settings' => $validated['settings'] ?? [],
+            'scheduled_at' => $validated['scheduled_at'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'post' => $post,
+        ], 201);
+    }
+
+    /**
+     * PUT /api/extension/scheduled-posts/{id}/status
+     */
+    public function updateScheduledPostStatus(Request $request, int $id)
+    {
+        $profile = $request->attributes->get('profile');
+
+        $post = ScheduledPost::forProfile($profile->id)->findOrFail($id);
+
+        $validated = $request->validate([
+            'status' => 'required|in:completed,failed',
+            'results' => 'nullable|array',
+        ]);
+
+        if ($validated['status'] === 'completed') {
+            $post->markCompleted($validated['results'] ?? []);
+        } else {
+            $post->markFailed($validated['results'] ?? []);
+        }
+
+        return response()->json([
+            'success' => true,
+            'post' => $post->fresh(),
+        ]);
+    }
+
+    /**
+     * DELETE /api/extension/scheduled-posts/{id}
+     */
+    public function cancelScheduledPost(Request $request, int $id)
+    {
+        $profile = $request->attributes->get('profile');
+
+        $post = ScheduledPost::forProfile($profile->id)
+            ->whereIn('status', ['pending', 'processing'])
+            ->findOrFail($id);
+
+        $post->update(['status' => 'cancelled', 'completed_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Scheduled post cancelled.',
         ]);
     }
 }
