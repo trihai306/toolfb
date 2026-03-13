@@ -60,9 +60,53 @@ class ScheduledPostResource extends Resource
                 ->default('pending')
                 ->disabled(),
 
-            Forms\Components\KeyValue::make('settings')
-                ->label('Cài đặt')
-                ->columnSpanFull(),
+            Forms\Components\Section::make('Cài đặt đăng bài')
+                ->schema([
+                    Forms\Components\Grid::make(3)->schema([
+                        Forms\Components\TextInput::make('settings.minDelay')
+                            ->label('Delay tối thiểu (giây)')
+                            ->numeric()
+                            ->default(30)
+                            ->minValue(10),
+
+                        Forms\Components\TextInput::make('settings.maxDelay')
+                            ->label('Delay tối đa (giây)')
+                            ->numeric()
+                            ->default(120)
+                            ->minValue(15),
+
+                        Forms\Components\Toggle::make('settings.spinEnabled')
+                            ->label('Spin nội dung')
+                            ->default(true)
+                            ->helperText('Dùng {A|B|C} để random'),
+                    ]),
+                ])
+                ->collapsible(),
+
+            Forms\Components\Section::make('🌱 Seeding (tự tương tác bài sau khi đăng)')
+                ->schema([
+                    Forms\Components\Toggle::make('settings.seedLike')
+                        ->label('Tự like bài sau khi đăng')
+                        ->default(true)
+                        ->helperText('Tự động like bài vừa đăng'),
+
+                    Forms\Components\Textarea::make('settings.seedComments')
+                        ->label('Seed comments')
+                        ->helperText('Mỗi dòng là 1 comment sẽ tự động đăng vào bài. Hỗ trợ spin {A|B|C}')
+                        ->rows(4)
+                        ->columnSpanFull()
+                        ->dehydrateStateUsing(fn ($state) => $state ? array_filter(array_map('trim', explode("\n", $state))) : [])
+                        ->formatStateUsing(fn ($state) => is_array($state) ? implode("\n", $state) : $state),
+
+                    Forms\Components\TextInput::make('settings.seedDelay')
+                        ->label('Delay giữa các comment seed (giây)')
+                        ->numeric()
+                        ->default(10)
+                        ->minValue(5)
+                        ->helperText('Thời gian chờ giữa các comment seed'),
+                ])
+                ->collapsible()
+                ->collapsed(),
 
             Forms\Components\KeyValue::make('results')
                 ->label('Kết quả')
