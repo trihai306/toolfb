@@ -459,7 +459,7 @@ class ExtensionController extends Controller
     {
         $validated = $request->validate([
             'extension_id' => 'required|string',
-            'command' => 'required|string|in:campaign.start,campaign.stop,config.update,ping,sync-profile',
+            'command' => 'required|string|in:campaign.start,campaign.stop,config.update,ping,sync-profile,extension.command',
             'payload' => 'nullable|array',
         ]);
 

@@ -378,6 +378,29 @@ class BrowserProfileResource extends Resource
                             ->duration(5000)
                             ->send();
                     }),
+                Actions\Action::make('fetchGroups')
+                    ->label('Lấy nhóm')
+                    ->icon('heroicon-o-user-group')
+                    ->color('success')
+                    ->tooltip('Mở Facebook → quét tất cả nhóm đã tham gia → sync về server')
+                    ->hidden(fn (BrowserProfile $record) => empty($record->extension_id))
+                    ->action(function (BrowserProfile $record) {
+                        event(new CampaignCommand(
+                            $record->extension_id,
+                            'extension.command',
+                            [
+                                'command' => 'FETCH_GROUPS',
+                                'data' => ['profile_id' => $record->id],
+                                'timestamp' => now()->toISOString(),
+                            ]
+                        ));
+                        Notification::make()
+                            ->title('📡 Đã gửi lệnh lấy nhóm')
+                            ->body("Extension sẽ tự mở Facebook → quét danh sách nhóm → sync về server.\nĐợi 30-60 giây rồi refresh trang Nhóm Facebook.")
+                            ->success()
+                            ->duration(8000)
+                            ->send();
+                    }),
                 Actions\EditAction::make(),
                 Actions\DeleteAction::make(),
             ])
