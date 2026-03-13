@@ -167,11 +167,18 @@ class BrowserProfileResource extends Resource
                         default => 'gray',
                     })
                     ->sortable(),
+                Tables\Columns\ImageColumn::make('facebook_avatar')
+                    ->label('Avatar')
+                    ->circular()
+                    ->size(32)
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('facebook_name')
                     ->label('Facebook')
                     ->icon('heroicon-m-user')
                     ->placeholder('Chưa liên kết')
-                    ->searchable(),
+                    ->searchable()
+                    ->description(fn ($record) => $record->facebook_uid ? "UID: {$record->facebook_uid}" : null),
                 Tables\Columns\TextColumn::make('browser_name')
                     ->label('Trình duyệt')
                     ->formatStateUsing(fn ($record) => $record->browser_name
