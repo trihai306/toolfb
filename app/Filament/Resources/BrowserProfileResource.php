@@ -95,14 +95,7 @@ class BrowserProfileResource extends Resource
                             ->disabled()
                             ->prefixIcon('heroicon-o-link')
                             ->placeholder('Tự lấy khi sync')
-                            ->url()
-                            ->suffixAction(
-                                Forms\Components\Actions\Action::make('openProfile')
-                                    ->icon('heroicon-o-arrow-top-right-on-square')
-                                    ->url(fn ($record) => $record?->facebook_profile_url)
-                                    ->openUrlInNewTab()
-                                    ->visible(fn ($record) => !empty($record?->facebook_profile_url))
-                            ),
+                            ->url(),
                     ]),
                     Grid::make(4)->schema([
                         Forms\Components\TextInput::make('facebook_friends_count')
