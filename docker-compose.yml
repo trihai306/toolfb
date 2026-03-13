@@ -1,0 +1,14 @@
+services:
+  soketi:
+    image: quay.io/soketi/soketi:latest
+    container_name: autofb_soketi
+    restart: unless-stopped
+    ports:
+      - "6001:6001"   # WebSocket port
+      - "9601:9601"   # Metrics port
+    environment:
+      SOKETI_DEBUG: "true"
+      SOKETI_DEFAULT_APP_ID: "autofb"
+      SOKETI_DEFAULT_APP_KEY: "autofb-key"
+      SOKETI_DEFAULT_APP_SECRET: "autofb-secret"
+      SOKETI_MAX_EVENT_PAYLOAD_KB: 100
