@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Events\CampaignCommand;
 use App\Models\BrowserProfile;
 use BackedEnum;
 use Filament\Actions;
@@ -246,6 +247,25 @@ class BrowserProfileResource extends Resource
                             $record->update(['status' => 'banned']);
                             Notification::make()->title('🔒 Đã khóa profile')->warning()->send();
                         }
+                    }),
+                Actions\Action::make('syncProfile')
+                    ->label('📡 Sync')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('info')
+                    ->tooltip('Gửi lệnh lấy thông tin trình duyệt & Facebook từ extension')
+                    ->hidden(fn (BrowserProfile $record) => empty($record->extension_id))
+                    ->action(function (BrowserProfile $record) {
+                        event(new CampaignCommand(
+                            $record->extension_id,
+                            'sync-profile',
+                            ['profile_id' => $record->id]
+                        ));
+                        Notification::make()
+                            ->title('📡 Đã gửi lệnh Sync')
+                            ->body("Extension sẽ tự lấy thông tin và gửi về. Refresh trang sau vài giây.")
+                            ->success()
+                            ->duration(5000)
+                            ->send();
                     }),
                 Actions\EditAction::make(),
                 Actions\DeleteAction::make(),
