@@ -24,4 +24,9 @@ Route::prefix('extension')
         Route::get('/settings', [ExtensionController::class, 'getSettings']);
         Route::post('/settings', [ExtensionController::class, 'updateSettings']);
         Route::get('/comment-templates', [ExtensionController::class, 'getCommentTemplates']);
+
+        // Groups
+        Route::get('/groups', [ExtensionController::class, 'getGroups']);
+        Route::post('/groups/sync', [ExtensionController::class, 'syncGroups']);
+        Route::delete('/groups/{groupId}', [ExtensionController::class, 'deleteGroup']);
     });

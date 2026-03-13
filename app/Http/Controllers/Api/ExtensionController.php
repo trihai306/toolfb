@@ -8,6 +8,7 @@ use App\Models\BrowserProfile;
 use App\Models\CommentCampaign;
 use App\Models\CommentLog;
 use App\Models\CommentTemplate;
+use App\Models\FacebookGroup;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -342,6 +343,83 @@ class ExtensionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Settings updated successfully',
+        ]);
+    }
+
+    /**
+     * Get groups for current profile
+     * GET /api/extension/groups
+     */
+    public function getGroups(Request $request)
+    {
+        $profile = $request->browser_profile;
+
+        $groups = FacebookGroup::where('browser_profile_id', $profile->id)
+            ->orderBy('created_at', 'desc')
+            ->get(['id', 'group_id', 'name', 'category', 'url', 'image', 'created_at']);
+
+        return response()->json([
+            'success' => true,
+            'groups' => $groups,
+        ]);
+    }
+
+    /**
+     * Sync groups from extension (batch upsert)
+     * POST /api/extension/groups/sync
+     */
+    public function syncGroups(Request $request)
+    {
+        $validated = $request->validate([
+            'groups' => 'required|array',
+            'groups.*.group_id' => 'required|string',
+            'groups.*.name' => 'required|string|max:500',
+            'groups.*.category' => 'nullable|string|max:50',
+            'groups.*.url' => 'nullable|string|max:500',
+            'groups.*.image' => 'nullable|string|max:1000',
+        ]);
+
+        $profile = $request->browser_profile;
+        $synced = [];
+
+        foreach ($validated['groups'] as $groupData) {
+            $group = FacebookGroup::updateOrCreate(
+                [
+                    'browser_profile_id' => $profile->id,
+                    'group_id' => $groupData['group_id'],
+                ],
+                [
+                    'name' => $groupData['name'],
+                    'category' => $groupData['category'] ?? 'general',
+                    'url' => $groupData['url'] ?? null,
+                    'image' => $groupData['image'] ?? null,
+                ]
+            );
+            $synced[] = $group;
+        }
+
+        return response()->json([
+            'success' => true,
+            'synced' => count($synced),
+            'groups' => $synced,
+        ]);
+    }
+
+    /**
+     * Delete a group by Facebook group ID
+     * DELETE /api/extension/groups/{groupId}
+     */
+    public function deleteGroup(Request $request, string $groupId)
+    {
+        $profile = $request->browser_profile;
+
+        $deleted = FacebookGroup::where('browser_profile_id', $profile->id)
+            ->where('group_id', $groupId)
+            ->delete();
+
+        return response()->json([
+            'success' => $deleted > 0,
+            'message' => $deleted > 0 ? 'Group deleted' : 'Group not found',
         ]);
     }
 
