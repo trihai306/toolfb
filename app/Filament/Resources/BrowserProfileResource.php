@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Events\CampaignCommand;
 use App\Models\BrowserProfile;
+use BackedEnum;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
@@ -18,7 +19,7 @@ use UnitEnum;
 class BrowserProfileResource extends Resource
 {
     protected static ?string $model = BrowserProfile::class;
-    protected static string | UnitEnum | null $navigationIcon = 'heroicon-o-globe-alt';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-globe-alt';
     protected static ?string $navigationLabel = 'Browser Profiles';
     protected static ?string $modelLabel = 'Browser Profile';
     protected static string | UnitEnum | null $navigationGroup = '⚙️ Cấu hình';
