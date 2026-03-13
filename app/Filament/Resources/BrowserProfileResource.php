@@ -74,13 +74,13 @@ class BrowserProfileResource extends Resource
                 ->collapsible()
                 ->compact(),
 
-            Section::make('📡 Thông tin từ Extension (tự động)')
-                ->description('Dữ liệu tự cập nhật từ extension khi kết nối. Không cần nhập tay.')
-                ->icon('heroicon-o-arrow-path')
+            Section::make('👤 Facebook Profile chi tiết')
+                ->description('Thông tin tài khoản Facebook — tự động lấy khi Sync')
+                ->icon('heroicon-o-user')
                 ->schema([
                     Grid::make(3)->schema([
                         Forms\Components\TextInput::make('facebook_name')
-                            ->label('Facebook Name')
+                            ->label('Tên Facebook')
                             ->disabled()
                             ->prefixIcon('heroicon-o-user')
                             ->placeholder('Extension tự lấy'),
@@ -89,12 +89,57 @@ class BrowserProfileResource extends Resource
                             ->disabled()
                             ->prefixIcon('heroicon-o-identification')
                             ->placeholder('Extension tự lấy'),
-                        Forms\Components\TextInput::make('extension_id')
-                            ->label('Extension ID')
+                        Forms\Components\TextInput::make('facebook_profile_url')
+                            ->label('Profile URL')
                             ->disabled()
-                            ->prefixIcon('heroicon-o-puzzle-piece')
-                            ->placeholder('Tự gán khi kết nối'),
+                            ->prefixIcon('heroicon-o-link')
+                            ->placeholder('Tự lấy khi sync')
+                            ->url()
+                            ->suffixAction(
+                                Forms\Components\Actions\Action::make('openProfile')
+                                    ->icon('heroicon-o-arrow-top-right-on-square')
+                                    ->url(fn ($record) => $record?->facebook_profile_url)
+                                    ->openUrlInNewTab()
+                                    ->visible(fn ($record) => !empty($record?->facebook_profile_url))
+                            ),
                     ]),
+                    Grid::make(4)->schema([
+                        Forms\Components\TextInput::make('facebook_friends_count')
+                            ->label('Số bạn bè')
+                            ->disabled()
+                            ->prefixIcon('heroicon-o-user-group')
+                            ->placeholder('—')
+                            ->numeric(),
+                        Forms\Components\TextInput::make('facebook_join_date')
+                            ->label('Tham gia từ')
+                            ->disabled()
+                            ->prefixIcon('heroicon-o-calendar')
+                            ->placeholder('—'),
+                        Forms\Components\TextInput::make('facebook_email')
+                            ->label('Email')
+                            ->disabled()
+                            ->prefixIcon('heroicon-o-envelope')
+                            ->placeholder('Nếu public'),
+                        Forms\Components\TextInput::make('facebook_verified')
+                            ->label('Xác minh')
+                            ->disabled()
+                            ->formatStateUsing(fn ($state) => $state ? '✅ Đã xác minh' : ($state === false ? '❌ Chưa' : '—'))
+                            ->placeholder('—'),
+                    ]),
+                    Forms\Components\Textarea::make('facebook_bio')
+                        ->label('Tiểu sử')
+                        ->disabled()
+                        ->placeholder('Bio trên Facebook')
+                        ->rows(2)
+                        ->columnSpan('full'),
+                ])
+                ->collapsible()
+                ->compact(),
+
+            Section::make('📡 Thông tin trình duyệt (tự động)')
+                ->description('Dữ liệu tự cập nhật từ extension khi kết nối.')
+                ->icon('heroicon-o-arrow-path')
+                ->schema([
                     Grid::make(3)->schema([
                         Forms\Components\TextInput::make('browser_name')
                             ->label('Trình duyệt')
@@ -111,11 +156,22 @@ class BrowserProfileResource extends Resource
                             ->prefixIcon('heroicon-o-computer-desktop')
                             ->placeholder('macOS 15.2'),
                     ]),
-                    Grid::make(4)->schema([
+                    Grid::make(3)->schema([
+                        Forms\Components\TextInput::make('extension_id')
+                            ->label('Extension ID')
+                            ->disabled()
+                            ->prefixIcon('heroicon-o-puzzle-piece')
+                            ->placeholder('Tự gán khi kết nối'),
                         Forms\Components\TextInput::make('screen_resolution')
                             ->label('Màn hình')
                             ->disabled()
                             ->placeholder('1920x1080'),
+                        Forms\Components\TextInput::make('ip_address')
+                            ->label('IP')
+                            ->disabled()
+                            ->placeholder('Từ request'),
+                    ]),
+                    Grid::make(4)->schema([
                         Forms\Components\TextInput::make('language')
                             ->label('Ngôn ngữ')
                             ->disabled()
@@ -124,10 +180,14 @@ class BrowserProfileResource extends Resource
                             ->label('Múi giờ')
                             ->disabled()
                             ->placeholder('Asia/Ho_Chi_Minh'),
-                        Forms\Components\TextInput::make('ip_address')
-                            ->label('IP')
+                        Forms\Components\TextInput::make('platform')
+                            ->label('Platform')
                             ->disabled()
-                            ->placeholder('Từ request'),
+                            ->placeholder('MacIntel'),
+                        Forms\Components\TextInput::make('connection_type')
+                            ->label('Kết nối')
+                            ->disabled()
+                            ->placeholder('4g, wifi...'),
                     ]),
                     Grid::make(2)->schema([
                         Forms\Components\TextInput::make('user_agent')
@@ -139,6 +199,50 @@ class BrowserProfileResource extends Resource
                 ])
                 ->collapsible()
                 ->compact(),
+
+            Section::make('📱 Phần cứng & Fingerprint')
+                ->description('Thông tin fingerprint trình duyệt')
+                ->icon('heroicon-o-cpu-chip')
+                ->schema([
+                    Grid::make(4)->schema([
+                        Forms\Components\TextInput::make('hardware_concurrency')
+                            ->label('CPU Cores')
+                            ->disabled()
+                            ->prefixIcon('heroicon-o-cpu-chip')
+                            ->placeholder('—')
+                            ->numeric(),
+                        Forms\Components\TextInput::make('device_memory')
+                            ->label('RAM (GB)')
+                            ->disabled()
+                            ->placeholder('—')
+                            ->numeric(),
+                        Forms\Components\TextInput::make('cookies_count')
+                            ->label('FB Cookies')
+                            ->disabled()
+                            ->placeholder('—')
+                            ->numeric(),
+                        Forms\Components\TextInput::make('do_not_track')
+                            ->label('Do Not Track')
+                            ->disabled()
+                            ->formatStateUsing(fn ($state) => $state ? '🔒 Bật' : ($state === false ? '🔓 Tắt' : '—'))
+                            ->placeholder('—'),
+                    ]),
+                    Grid::make(2)->schema([
+                        Forms\Components\TextInput::make('webgl_renderer')
+                            ->label('GPU (WebGL)')
+                            ->disabled()
+                            ->columnSpan(1)
+                            ->placeholder('Tự lấy từ browser'),
+                        Forms\Components\TextInput::make('touch_support')
+                            ->label('Cảm ứng')
+                            ->disabled()
+                            ->formatStateUsing(fn ($state) => $state ? '✅ Có touch' : ($state === false ? '❌ Không' : '—'))
+                            ->placeholder('—'),
+                    ]),
+                ])
+                ->collapsible()
+                ->collapsed()
+                ->compact(),
         ]);
     }
 
@@ -146,6 +250,12 @@ class BrowserProfileResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('facebook_avatar')
+                    ->label('')
+                    ->circular()
+                    ->size(36)
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Tên Profile')
                     ->searchable()
@@ -168,18 +278,15 @@ class BrowserProfileResource extends Resource
                         default => 'gray',
                     })
                     ->sortable(),
-                Tables\Columns\ImageColumn::make('facebook_avatar')
-                    ->label('Avatar')
-                    ->circular()
-                    ->size(32)
-                    ->placeholder('—')
-                    ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('facebook_name')
                     ->label('Facebook')
                     ->icon('heroicon-m-user')
                     ->placeholder('Chưa liên kết')
                     ->searchable()
-                    ->description(fn ($record) => $record->facebook_uid ? "UID: {$record->facebook_uid}" : null),
+                    ->description(fn ($record) => collect([
+                        $record->facebook_uid ? "UID: {$record->facebook_uid}" : null,
+                        $record->facebook_friends_count ? "👥 {$record->facebook_friends_count} bạn bè" : null,
+                    ])->filter()->implode(' · ')),
                 Tables\Columns\TextColumn::make('browser_name')
                     ->label('Trình duyệt')
                     ->formatStateUsing(fn ($record) => $record->browser_name
@@ -189,6 +296,16 @@ class BrowserProfileResource extends Resource
                     ->icon('heroicon-m-globe-alt')
                     ->placeholder('Chưa sync')
                     ->description(fn ($record) => $record->os_info),
+                Tables\Columns\TextColumn::make('hardware_summary')
+                    ->label('Phần cứng')
+                    ->state(fn ($record) => collect([
+                        $record->hardware_concurrency ? "{$record->hardware_concurrency} cores" : null,
+                        $record->device_memory ? "{$record->device_memory}GB" : null,
+                    ])->filter()->implode(' / ') ?: null)
+                    ->icon('heroicon-m-cpu-chip')
+                    ->placeholder('—')
+                    ->description(fn ($record) => $record->webgl_renderer ? \Illuminate\Support\Str::limit($record->webgl_renderer, 30) : null)
+                    ->toggleable(isToggledHiddenByDefault: false),
                 Tables\Columns\TextColumn::make('ip_address')
                     ->label('IP')
                     ->icon('heroicon-m-signal')
@@ -252,7 +369,7 @@ class BrowserProfileResource extends Resource
                     ->label('📡 Sync')
                     ->icon('heroicon-o-arrow-path')
                     ->color('info')
-                    ->tooltip('Gửi lệnh lấy thông tin trình duyệt & Facebook từ extension')
+                    ->tooltip('Gửi lệnh lấy thông tin trình duyệt + Facebook chi tiết từ extension (tự mở tab FB)')
                     ->hidden(fn (BrowserProfile $record) => empty($record->extension_id))
                     ->action(function (BrowserProfile $record) {
                         event(new CampaignCommand(
@@ -262,7 +379,7 @@ class BrowserProfileResource extends Resource
                         ));
                         Notification::make()
                             ->title('📡 Đã gửi lệnh Sync')
-                            ->body("Extension sẽ tự lấy thông tin và gửi về. Refresh trang sau vài giây.")
+                            ->body("Extension sẽ tự lấy thông tin trình duyệt + mở Facebook lấy profile chi tiết. Refresh trang sau vài giây.")
                             ->success()
                             ->duration(5000)
                             ->send();
