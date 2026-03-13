@@ -35,4 +35,8 @@ Route::prefix('extension')
         Route::post('/scheduled-posts', [ExtensionController::class, 'createScheduledPost']);
         Route::put('/scheduled-posts/{id}/status', [ExtensionController::class, 'updateScheduledPostStatus']);
         Route::delete('/scheduled-posts/{id}', [ExtensionController::class, 'cancelScheduledPost']);
+
+        // Comment Roaming — log & status endpoints
+        Route::post('/comment-logs', [ExtensionController::class, 'reportComment']);
+        Route::post('/campaign-status', [ExtensionController::class, 'campaignStatus']);
     });

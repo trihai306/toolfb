@@ -282,6 +282,34 @@ class ExtensionController extends Controller
     }
 
     /**
+     * Extension reports campaign status change (completed/paused)
+     * POST /api/extension/campaign-status
+     */
+    public function campaignStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'campaign_id' => 'required|exists:comment_campaigns,id',
+            'status' => 'required|in:running,paused,completed,failed',
+            'stats' => 'nullable|array',
+        ]);
+
+        $campaign = CommentCampaign::findOrFail($validated['campaign_id']);
+        $updateData = [
+            'status' => $validated['status'],
+            'stats' => $validated['stats'] ?? $campaign->stats,
+        ];
+        if ($validated['status'] === 'completed') {
+            $updateData['completed_at'] = now();
+        }
+        $campaign->update($updateData);
+
+        return response()->json([
+            'success' => true,
+            'campaign' => $campaign->fresh(),
+        ]);
+    }
+
+    /**
      * Extension heartbeat — also accepts browser_data for auto-sync
      * POST /api/extension/heartbeat
      */

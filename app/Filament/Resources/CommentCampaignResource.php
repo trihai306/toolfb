@@ -76,7 +76,7 @@ class CommentCampaignResource extends Resource
                 ]),
 
             Schemas\Components\Section::make('⚙️ Cấu hình chiến dịch')
-                ->description('Thiết lập delay, giới hạn và kết nối extension')
+                ->description('Thiết lập delay, giới hạn và hành vi comment chuyên nghiệp')
                 ->icon('heroicon-o-adjustments-horizontal')
                 ->schema([
                     Schemas\Components\Grid::make(2)->schema([
@@ -86,15 +86,93 @@ class CommentCampaignResource extends Resource
                             ->helperText('UUID của Chrome extension đích, bỏ trống để dùng extension mặc định')
                             ->prefixIcon('heroicon-o-puzzle-piece'),
                     ]),
-                    Forms\Components\KeyValue::make('settings')
-                        ->label('Thông số nâng cao')
-                        ->default([
-                            'commentsPerGroup' => '3',
-                            'minDelay' => '15',
-                            'maxDelay' => '45',
-                            'scrollDepth' => '5',
-                        ])
-                        ->helperText('Key-value cấu hình chi tiết cho extension'),
+                ]),
+
+            Schemas\Components\Section::make('⏱️ Thời gian delay')
+                ->description('Khoảng cách giữa các lần comment — delay tự nhiên tránh bot')
+                ->icon('heroicon-o-clock')
+                ->schema([
+                    Schemas\Components\Grid::make(3)->schema([
+                        Forms\Components\TextInput::make('settings.commentMinDelay')
+                            ->label('Delay tối thiểu (giây)')
+                            ->numeric()
+                            ->default(15)
+                            ->minValue(5)
+                            ->suffix('giây')
+                            ->helperText('Thời gian nghỉ tối thiểu giữa các comment'),
+                        Forms\Components\TextInput::make('settings.commentMaxDelay')
+                            ->label('Delay tối đa (giây)')
+                            ->numeric()
+                            ->default(45)
+                            ->minValue(10)
+                            ->suffix('giây')
+                            ->helperText('Thời gian nghỉ tối đa (phân phối Gaussian)'),
+                        Forms\Components\TextInput::make('settings.commentsPerGroup')
+                            ->label('Số comment/nhóm')
+                            ->numeric()
+                            ->default(3)
+                            ->minValue(1)
+                            ->maxValue(10)
+                            ->helperText('Bao nhiêu bài viết sẽ được comment trong mỗi nhóm'),
+                    ]),
+                    Schemas\Components\Grid::make(2)->schema([
+                        Forms\Components\TextInput::make('settings.scrollDepth')
+                            ->label('Độ sâu cuộn feed')
+                            ->numeric()
+                            ->default(5)
+                            ->minValue(2)
+                            ->maxValue(15)
+                            ->helperText('Số lần cuộn feed để tìm bài — cuộn nhiều = nhiều bài hơn'),
+                        Forms\Components\Toggle::make('settings.spinEnabled')
+                            ->label('Bật spin nội dung')
+                            ->helperText('Xoay vòng nội dung dùng {spin|text1|text2}')
+                            ->default(true),
+                    ]),
+                ])
+                ->collapsible(),
+
+            Schemas\Components\Section::make('🛡️ Chống phát hiện Bot')
+                ->description('Hành vi giống người thật để Facebook không phát hiện')
+                ->icon('heroicon-o-shield-check')
+                ->schema([
+                    Schemas\Components\Grid::make(2)->schema([
+                        Forms\Components\Toggle::make('settings.skipSponsored')
+                            ->label('Bỏ qua bài quảng cáo/sponsored')
+                            ->helperText('Tự động skip bài Sponsored — tự nhiên hơn')
+                            ->default(true),
+                        Forms\Components\Toggle::make('settings.skipOwn')
+                            ->label('Bỏ qua bài của mình')
+                            ->helperText('Không comment vào bài mình đã đăng')
+                            ->default(true),
+                        Forms\Components\Toggle::make('settings.skipCommented')
+                            ->label('Bỏ qua bài đã comment')
+                            ->helperText('Không comment lại vào bài đã bình luận')
+                            ->default(true),
+                    ]),
+                    Schemas\Components\Grid::make(3)->schema([
+                        Forms\Components\TextInput::make('settings.autoLikeChance')
+                            ->label('Xác suất auto-like (%)')
+                            ->numeric()
+                            ->default(30)
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->suffix('%')
+                            ->helperText('% cơ hội like bài trước khi comment'),
+                        Forms\Components\TextInput::make('settings.maxPerHour')
+                            ->label('Giới hạn comment/giờ')
+                            ->numeric()
+                            ->default(30)
+                            ->minValue(5)
+                            ->maxValue(60)
+                            ->helperText('Tự dừng nghỉ khi đạt giới hạn'),
+                        Forms\Components\TextInput::make('settings.maxPerDay')
+                            ->label('Giới hạn comment/ngày')
+                            ->numeric()
+                            ->default(150)
+                            ->minValue(10)
+                            ->maxValue(500)
+                            ->helperText('Không vượt quá giới hạn này trong 1 ngày'),
+                    ]),
                 ])
                 ->collapsible()
                 ->collapsed(),
