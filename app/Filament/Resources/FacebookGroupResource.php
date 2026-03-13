@@ -6,6 +6,7 @@ use App\Filament\Resources\FacebookGroupResource\Pages;
 use App\Models\BrowserProfile;
 use App\Models\FacebookGroup;
 use BackedEnum;
+use Filament\Actions;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
@@ -95,17 +96,17 @@ class FacebookGroupResource extends Resource
                     ),
             ])
             ->actions([
-                Tables\Actions\Action::make('openGroup')
+                Actions\Action::make('openGroup')
                     ->label('Mở nhóm')
                     ->icon('heroicon-o-arrow-top-right-on-square')
                     ->url(fn ($record) => $record->url ?? "https://facebook.com/groups/{$record->group_id}")
                     ->openUrlInNewTab()
                     ->color('info'),
-                Tables\Actions\DeleteAction::make(),
+                Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                Actions\BulkActionGroup::make([
+                    Actions\DeleteBulkAction::make(),
                 ]),
             ])
             ->emptyStateHeading('Chưa có nhóm nào')

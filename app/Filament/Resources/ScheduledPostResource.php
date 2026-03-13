@@ -7,10 +7,13 @@ use App\Models\BrowserProfile;
 use App\Models\FacebookGroup;
 use App\Models\ScheduledPost;
 use BackedEnum;
+use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
 use Filament\Tables;
 use Filament\Tables\Table;
 use UnitEnum;
@@ -40,7 +43,7 @@ class ScheduledPostResource extends Resource
     {
         return $form->schema([
             // === Left column: Content ===
-            Forms\Components\Group::make([
+            Group::make([
                 Section::make('📝 Nội dung bài viết')
                     ->description('Soạn nội dung để đăng lên các nhóm Facebook')
                     ->schema([
@@ -78,7 +81,7 @@ class ScheduledPostResource extends Resource
 
                 Section::make('⚙️ Cài đặt đăng bài')
                     ->schema([
-                        Forms\Components\Grid::make(3)->schema([
+                        Grid::make(3)->schema([
                             Forms\Components\TextInput::make('settings.minDelay')
                                 ->label('Delay tối thiểu (giây)')
                                 ->numeric()
@@ -126,7 +129,7 @@ class ScheduledPostResource extends Resource
             ])->columnSpan(2),
 
             // === Right column: Groups + Schedule ===
-            Forms\Components\Group::make([
+            Group::make([
                 Section::make('📅 Lên lịch')
                     ->schema([
                         Forms\Components\DateTimePicker::make('scheduled_at')
@@ -271,19 +274,19 @@ class ScheduledPostResource extends Resource
                     ->options(BrowserProfile::pluck('name', 'id')),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('cancel')
+                Actions\EditAction::make(),
+                Actions\Action::make('cancel')
                     ->label('Huỷ')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
                     ->visible(fn ($record) => in_array($record->status, ['pending', 'processing']))
                     ->action(fn ($record) => $record->update(['status' => 'cancelled', 'completed_at' => now()])),
-                Tables\Actions\DeleteAction::make(),
+                Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                Actions\BulkActionGroup::make([
+                    Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
