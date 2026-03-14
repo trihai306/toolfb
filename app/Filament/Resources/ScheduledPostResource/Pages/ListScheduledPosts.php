@@ -51,9 +51,21 @@ class ListScheduledPosts extends ListRecords
                                     }
                                     $template->incrementUsage();
                                 }
+                            } else {
+                                $set('content', '');
+                                $set('images', []);
                             }
                         })
-                        ->helperText('💡 Chọn mẫu để tự động điền nội dung'),
+                        ->helperText(function (callable $get) {
+                            $templateId = $get('template_id');
+                            if ($templateId) {
+                                $template = PostTemplate::find($templateId);
+                                return $template
+                                    ? "✅ Sử dụng mẫu: **{$template->name}** — nội dung + hình ảnh sẽ lấy từ mẫu"
+                                    : '💡 Chọn mẫu hoặc nhập nội dung thủ công bên dưới';
+                            }
+                            return '💡 Chọn mẫu hoặc nhập nội dung thủ công bên dưới';
+                        }),
 
                     Select::make('browser_profile_id')
                         ->label('Profile trình duyệt')
@@ -74,7 +86,8 @@ class ListScheduledPosts extends ListRecords
                         ->label('Nội dung bài đăng')
                         ->placeholder('Nhập nội dung bài đăng...')
                         ->rows(4)
-                        ->required()
+                        ->required(fn (callable $get) => !$get('template_id'))
+                        ->hidden(fn (callable $get) => (bool) $get('template_id'))
                         ->helperText('💡 Dùng {spin|text1|text2} để xoay vòng nội dung'),
 
                     FileUpload::make('images')
@@ -82,6 +95,7 @@ class ListScheduledPosts extends ListRecords
                         ->multiple()
                         ->image()
                         ->directory('post-images')
+                        ->hidden(fn (callable $get) => (bool) $get('template_id'))
                         ->helperText('Tùy chọn: upload ảnh kèm bài'),
 
                     CheckboxList::make('group_ids')
