@@ -78,6 +78,7 @@ class PostTemplateResource extends Resource
                         ->label('Hình ảnh kèm theo')
                         ->multiple()
                         ->image()
+                        ->disk('public')
                         ->maxFiles(10)
                         ->maxSize(5120)
                         ->directory('post-templates')
@@ -161,6 +162,7 @@ class PostTemplateResource extends Resource
 
                 Tables\Columns\ImageColumn::make('images')
                     ->label('Ảnh')
+                    ->disk('public')
                     ->circular()
                     ->stacked()
                     ->limit(3),
