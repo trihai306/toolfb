@@ -14,6 +14,8 @@ class FacebookGroup extends Model
         'category',
         'url',
         'image',
+        'member_count',
+        'privacy',
     ];
 
     public function browserProfile(): BelongsTo

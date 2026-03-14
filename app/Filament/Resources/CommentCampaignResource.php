@@ -4,7 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Events\CampaignCommand;
 use App\Filament\Resources\CommentCampaignResource\Pages;
+use App\Models\BrowserProfile;
 use App\Models\CommentCampaign;
+use App\Models\FacebookGroup;
 use BackedEnum;
 use Filament\Actions;
 use Filament\Forms;
@@ -61,6 +63,27 @@ class CommentCampaignResource extends Resource
                             ->default('draft')
                             ->prefixIcon('heroicon-o-signal'),
                     ]),
+                    Forms\Components\Select::make('browser_profile_id')
+                        ->label('Profile trình duyệt')
+                        ->options(
+                            BrowserProfile::whereNotNull('extension_id')
+                                ->where('extension_id', '!=', '')
+                                ->get()
+                                ->mapWithKeys(fn ($p) => [
+                                    $p->id => ($p->facebook_name ?: $p->name) . ($p->facebook_uid ? " (UID: {$p->facebook_uid})" : ''),
+                                ])
+                        )
+                        ->required()
+                        ->searchable()
+                        ->reactive()
+                        ->afterStateUpdated(function (callable $set, $state) {
+                            if ($state) {
+                                $profile = BrowserProfile::find($state);
+                                $set('extension_id', $profile?->extension_id);
+                            }
+                        })
+                        ->prefixIcon('heroicon-o-globe-alt')
+                        ->helperText('Chỉ hiện profile đã kết nối extension'),
                     Forms\Components\Textarea::make('content')
                         ->label('Nội dung comment')
                         ->placeholder("VD: Sản phẩm chất lượng quá! {spin|Mình đã dùng|Mình đã thử|Mình rất thích} rồi, recommend cho mọi người 👍")
@@ -75,17 +98,32 @@ class CommentCampaignResource extends Resource
                         ->helperText('Upload ảnh kèm comment (khuyến nghị nhiều ảnh để xoay vòng)'),
                 ]),
 
-            Schemas\Components\Section::make('⚙️ Cấu hình chiến dịch')
-                ->description('Thiết lập delay, giới hạn và hành vi comment chuyên nghiệp')
-                ->icon('heroicon-o-adjustments-horizontal')
+            Schemas\Components\Section::make('👥 Chọn nhóm comment')
+                ->description('Chọn nhóm Facebook để comment dạo')
+                ->icon('heroicon-o-user-group')
                 ->schema([
-                    Schemas\Components\Grid::make(2)->schema([
-                        Forms\Components\TextInput::make('extension_id')
-                            ->label('Extension ID')
-                            ->placeholder('UUID tự động - để trống nếu dùng extension mặc định')
-                            ->helperText('UUID của Chrome extension đích, bỏ trống để dùng extension mặc định')
-                            ->prefixIcon('heroicon-o-puzzle-piece'),
-                    ]),
+                    Forms\Components\CheckboxList::make('group_ids')
+                        ->label('')
+                        ->options(function (callable $get) {
+                            $profileId = $get('browser_profile_id');
+                            if (!$profileId) return [];
+                            return FacebookGroup::where('browser_profile_id', $profileId)
+                                ->orderBy('name')
+                                ->pluck('name', 'group_id');
+                        })
+                        ->searchable()
+                        ->bulkToggleable()
+                        ->columns(1)
+                        ->helperText(function (callable $get) {
+                            $profileId = $get('browser_profile_id');
+                            if (!$profileId) return '⚠️ Vui lòng chọn Profile trước';
+                            $count = FacebookGroup::where('browser_profile_id', $profileId)->count();
+                            return $count > 0
+                                ? "📌 {$count} nhóm khả dụng — tick chọn nhóm muốn comment"
+                                : '⚠️ Profile này chưa sync nhóm. Vào Admin → Nhóm Facebook → Đồng bộ';
+                        })
+                        ->required(),
+                    Forms\Components\Hidden::make('extension_id'),
                 ]),
 
             Schemas\Components\Section::make('⏱️ Thời gian delay')
@@ -249,21 +287,51 @@ class CommentCampaignResource extends Resource
                     ->modalDescription('Chiến dịch sẽ bắt đầu gửi lệnh comment tới extension. Đảm bảo extension đang hoạt động.')
                     ->visible(fn (CommentCampaign $record) => in_array($record->status, ['draft', 'paused']))
                     ->action(function (CommentCampaign $record) {
+                        // Get extension_id from profile or direct
+                        $extensionId = $record->extension_id;
+                        if (!$extensionId && $record->browser_profile_id) {
+                            $extensionId = BrowserProfile::find($record->browser_profile_id)?->extension_id;
+                        }
+
+                        if (!$extensionId) {
+                            Notification::make()
+                                ->title('❌ Không tìm thấy Extension')
+                                ->body('Profile chưa kết nối extension. Mở trình duyệt và bật extension trước.')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
                         $record->update(['status' => 'running', 'started_at' => now()]);
 
-                        if ($record->extension_id) {
-                            event(new CampaignCommand($record->extension_id, 'campaign.start', [
-                                'campaignId' => $record->id,
+                        // Build groups array with URLs for the extension
+                        $groupIds = $record->group_ids ?? $record->groups ?? [];
+                        $groups = FacebookGroup::whereIn('group_id', $groupIds)
+                            ->get()
+                            ->map(fn ($g) => [
+                                'groupId' => $g->group_id,
+                                'name' => $g->name,
+                                'url' => 'https://www.facebook.com/groups/' . $g->group_id,
+                            ])
+                            ->values()
+                            ->toArray();
+
+                        // Broadcast on 'extension.command' — the channel the extension listens on
+                        event(new CampaignCommand($extensionId, 'extension.command', [
+                            'command' => 'START_COMMENTING',
+                            'data' => [
+                                'campaign_id' => $record->id,
                                 'content' => $record->content,
-                                'groups' => $record->groups ?? [],
+                                'groups' => $groups,
                                 'images' => $record->images ?? [],
                                 'settings' => $record->settings ?? [],
-                            ]));
-                        }
+                            ],
+                            'timestamp' => now()->toISOString(),
+                        ]));
 
                         Notification::make()
                             ->title('🚀 Chiến dịch đã bắt đầu')
-                            ->body("Đã gửi lệnh chạy tới extension")
+                            ->body("Đã gửi lệnh comment tới extension — " . count($groups) . " nhóm")
                             ->success()
                             ->send();
                     }),
@@ -278,9 +346,16 @@ class CommentCampaignResource extends Resource
                     ->action(function (CommentCampaign $record) {
                         $record->update(['status' => 'paused']);
 
-                        if ($record->extension_id) {
-                            event(new CampaignCommand($record->extension_id, 'campaign.stop', [
-                                'campaignId' => $record->id,
+                        $extensionId = $record->extension_id;
+                        if (!$extensionId && $record->browser_profile_id) {
+                            $extensionId = BrowserProfile::find($record->browser_profile_id)?->extension_id;
+                        }
+
+                        if ($extensionId) {
+                            event(new CampaignCommand($extensionId, 'extension.command', [
+                                'command' => 'STOP_COMMENTING',
+                                'data' => ['campaign_id' => $record->id],
+                                'timestamp' => now()->toISOString(),
                             ]));
                         }
 

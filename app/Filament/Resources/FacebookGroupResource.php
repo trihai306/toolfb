@@ -38,20 +38,15 @@ class FacebookGroupResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('image')
-                    ->label('')
-                    ->circular()
-                    ->width(40)
-                    ->height(40)
-                    ->defaultImageUrl('https://via.placeholder.com/40'),
-
                 Tables\Columns\TextColumn::make('name')
                     ->label('Tên nhóm')
                     ->searchable()
                     ->sortable()
                     ->limit(50)
                     ->tooltip(fn ($record) => $record->name)
-                    ->description(fn ($record) => $record->category ? "📂 {$record->category}" : null),
+                    ->description(fn ($record) => $record->category ? "📂 {$record->category}" : null)
+                    ->url(fn ($record) => $record->url ?? "https://facebook.com/groups/{$record->group_id}")
+                    ->openUrlInNewTab(),
 
                 Tables\Columns\TextColumn::make('group_id')
                     ->label('Group ID')
@@ -66,13 +61,32 @@ class FacebookGroupResource extends Resource
                     ->icon('heroicon-o-globe-alt')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('url')
-                    ->label('Link')
-                    ->url(fn ($record) => $record->url)
-                    ->openUrlInNewTab()
-                    ->limit(30)
-                    ->icon('heroicon-o-link')
-                    ->color('primary'),
+                Tables\Columns\TextColumn::make('member_count')
+                    ->label('Thành viên')
+                    ->sortable()
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return '—';
+                        if ($state >= 1000000) return round($state / 1000000, 1) . 'M';
+                        if ($state >= 1000) return round($state / 1000, 1) . 'K';
+                        return number_format($state);
+                    })
+                    ->color('success')
+                    ->icon('heroicon-o-users'),
+
+                Tables\Columns\TextColumn::make('privacy')
+                    ->label('Loại')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => match($state) {
+                        'public' => '🌐 Công khai',
+                        'private' => '🔒 Riêng tư',
+                        default => $state ?? '—',
+                    })
+                    ->color(fn ($state) => match($state) {
+                        'public' => 'success',
+                        'private' => 'warning',
+                        default => 'gray',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Sync lúc')
@@ -81,6 +95,7 @@ class FacebookGroupResource extends Resource
                     ->description(fn ($record) => $record->created_at?->diffForHumans()),
             ])
             ->defaultSort('created_at', 'desc')
+            ->poll('5s')
             ->filters([
                 Tables\Filters\SelectFilter::make('browser_profile_id')
                     ->label('Profile')

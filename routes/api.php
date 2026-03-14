@@ -39,4 +39,7 @@ Route::prefix('extension')
         // Comment Roaming — log & status endpoints
         Route::post('/comment-logs', [ExtensionController::class, 'reportComment']);
         Route::post('/campaign-status', [ExtensionController::class, 'campaignStatus']);
+
+        // Post result logs
+        Route::post('/post-logs', [ExtensionController::class, 'reportPostResult']);
     });

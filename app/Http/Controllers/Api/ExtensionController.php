@@ -9,6 +9,7 @@ use App\Models\CommentCampaign;
 use App\Models\CommentLog;
 use App\Models\CommentTemplate;
 use App\Models\FacebookGroup;
+use App\Models\PostLog;
 use App\Models\ScheduledPost;
 use App\Models\Setting;
 use App\Models\User;
@@ -406,6 +407,8 @@ class ExtensionController extends Controller
             'groups.*.category' => 'nullable|string|max:50',
             'groups.*.url' => 'nullable|string|max:500',
             'groups.*.image' => 'nullable|string|max:1000',
+            'groups.*.member_count' => 'nullable|integer',
+            'groups.*.privacy' => 'nullable|string|in:public,private',
         ]);
 
         $profile = $request->browser_profile;
@@ -422,6 +425,8 @@ class ExtensionController extends Controller
                     'category' => $groupData['category'] ?? 'general',
                     'url' => $groupData['url'] ?? null,
                     'image' => $groupData['image'] ?? null,
+                    'member_count' => $groupData['member_count'] ?? null,
+                    'privacy' => $groupData['privacy'] ?? null,
                 ]
             );
             $synced[] = $group;
@@ -569,6 +574,42 @@ class ExtensionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Scheduled post cancelled.',
+        ]);
+    }
+
+    /**
+     * Report a post result (success/failure for a specific group)
+     * POST /api/extension/post-logs
+     */
+    public function reportPostResult(Request $request)
+    {
+        $validated = $request->validate([
+            'scheduled_post_id' => 'nullable|integer',
+            'group_id' => 'required|string',
+            'group_name' => 'nullable|string|max:500',
+            'status' => 'required|in:success,failed,skipped',
+            'content_preview' => 'nullable|string|max:500',
+            'error' => 'nullable|string|max:1000',
+            'post_url' => 'nullable|string|max:500',
+        ]);
+
+        $profile = $request->browser_profile;
+
+        $log = PostLog::create([
+            'scheduled_post_id' => $validated['scheduled_post_id'] ?? null,
+            'browser_profile_id' => $profile->id,
+            'group_id' => $validated['group_id'],
+            'group_name' => $validated['group_name'] ?? null,
+            'status' => $validated['status'],
+            'content_preview' => $validated['content_preview'] ?? null,
+            'error' => $validated['error'] ?? null,
+            'post_url' => $validated['post_url'] ?? null,
+            'posted_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'log_id' => $log->id,
         ]);
     }
 }
