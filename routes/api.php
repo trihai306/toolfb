@@ -24,6 +24,7 @@ Route::prefix('extension')
         Route::get('/settings', [ExtensionController::class, 'getSettings']);
         Route::post('/settings', [ExtensionController::class, 'updateSettings']);
         Route::get('/comment-templates', [ExtensionController::class, 'getCommentTemplates']);
+        Route::get('/post-templates', [ExtensionController::class, 'getPostTemplates']);
 
         // Groups
         Route::get('/groups', [ExtensionController::class, 'getGroups']);

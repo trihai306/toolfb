@@ -10,6 +10,7 @@ use App\Models\CommentLog;
 use App\Models\CommentTemplate;
 use App\Models\FacebookGroup;
 use App\Models\PostLog;
+use App\Models\PostTemplate;
 use App\Models\ScheduledPost;
 use App\Models\Setting;
 use App\Models\User;
@@ -352,6 +353,22 @@ class ExtensionController extends Controller
     {
         $templates = CommentTemplate::orderBy('updated_at', 'desc')
             ->get(['id', 'name', 'content', 'images', 'tags', 'usage_count', 'updated_at']);
+
+        return response()->json([
+            'success' => true,
+            'templates' => $templates,
+        ]);
+    }
+
+    /**
+     * Get post templates
+     * GET /api/extension/post-templates
+     */
+    public function getPostTemplates(Request $request)
+    {
+        $templates = PostTemplate::active()
+            ->orderBy('usage_count', 'desc')
+            ->get(['id', 'name', 'category', 'content', 'images', 'tags', 'seed_comments', 'usage_count', 'updated_at']);
 
         return response()->json([
             'success' => true,

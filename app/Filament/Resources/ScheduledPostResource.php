@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ScheduledPostResource\Pages;
 use App\Models\BrowserProfile;
 use App\Models\FacebookGroup;
+use App\Models\PostTemplate;
 use App\Models\ScheduledPost;
 use BackedEnum;
 use Filament\Actions;
@@ -47,6 +48,43 @@ class ScheduledPostResource extends Resource
                 Section::make('📝 Nội dung bài viết')
                     ->description('Soạn nội dung để đăng lên các nhóm Facebook')
                     ->schema([
+                        Forms\Components\Select::make('template_id')
+                            ->label('📋 Chọn mẫu bài đăng')
+                            ->options(
+                                PostTemplate::active()->orderBy('usage_count', 'desc')
+                                    ->get()
+                                    ->mapWithKeys(fn ($t) => [
+                                        $t->id => $t->name . ($t->category !== 'general' ? " [{$t->category}]" : ''),
+                                    ])
+                            )
+                            ->searchable()
+                            ->placeholder('-- Chọn mẫu để điền nhanh --')
+                            ->prefixIcon('heroicon-o-rectangle-stack')
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                if ($state) {
+                                    $template = PostTemplate::find($state);
+                                    if ($template) {
+                                        $set('content', $template->content);
+                                        if ($template->images) {
+                                            $set('images', $template->images);
+                                        }
+                                        if ($template->seed_comments) {
+                                            $seedTexts = collect($template->seed_comments)
+                                                ->pluck('text')
+                                                ->filter()
+                                                ->values()
+                                                ->toArray();
+                                            $set('settings.seed_comments', $seedTexts);
+                                        }
+                                        $template->incrementUsage();
+                                    }
+                                }
+                            })
+                            ->helperText('Chọn mẫu để tự động điền nội dung, hình ảnh và seed comments')
+                            ->columnSpanFull()
+                            ->dehydrated(false),
+
                         Forms\Components\Select::make('browser_profile_id')
                             ->label('Profile trình duyệt')
                             ->options(

@@ -6,12 +6,14 @@ use App\Events\CampaignCommand;
 use App\Filament\Resources\ScheduledPostResource;
 use App\Models\BrowserProfile;
 use App\Models\FacebookGroup;
+use App\Models\PostTemplate;
 use App\Models\ScheduledPost;
 use Filament\Actions;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 
@@ -27,6 +29,33 @@ class ListScheduledPosts extends ListRecords
                 ->icon('heroicon-o-bolt')
                 ->color('success')
                 ->form([
+                    Select::make('template_id')
+                        ->label('📋 Chọn mẫu bài đăng')
+                        ->options(
+                            PostTemplate::active()->orderBy('usage_count', 'desc')
+                                ->get()
+                                ->mapWithKeys(fn ($t) => [
+                                    $t->id => $t->name . ($t->category !== 'general' ? " [{$t->category}]" : ''),
+                                ])
+                        )
+                        ->searchable()
+                        ->placeholder('-- Chọn mẫu để điền nhanh --')
+                        ->prefixIcon('heroicon-o-rectangle-stack')
+                        ->reactive()
+                        ->afterStateUpdated(function ($state, Set $set) {
+                            if ($state) {
+                                $template = PostTemplate::find($state);
+                                if ($template) {
+                                    $set('content', $template->content);
+                                    if ($template->images) {
+                                        $set('images', $template->images);
+                                    }
+                                    $template->incrementUsage();
+                                }
+                            }
+                        })
+                        ->helperText('💡 Chọn mẫu để tự động điền nội dung'),
+
                     Select::make('browser_profile_id')
                         ->label('Profile trình duyệt')
                         ->options(
