@@ -61,7 +61,7 @@ class ScheduledPostResource extends Resource
                             ->placeholder('-- Chọn mẫu để điền nhanh --')
                             ->prefixIcon('heroicon-o-rectangle-stack')
                             ->reactive()
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                            ->afterStateUpdated(function ($state, callable $set) {
                                 if ($state) {
                                     $template = PostTemplate::find($state);
                                     if ($template) {

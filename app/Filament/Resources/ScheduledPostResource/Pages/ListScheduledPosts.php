@@ -13,7 +13,6 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 
@@ -42,7 +41,7 @@ class ListScheduledPosts extends ListRecords
                         ->placeholder('-- Chọn mẫu để điền nhanh --')
                         ->prefixIcon('heroicon-o-rectangle-stack')
                         ->reactive()
-                        ->afterStateUpdated(function ($state, Set $set) {
+                        ->afterStateUpdated(function ($state, callable $set) {
                             if ($state) {
                                 $template = PostTemplate::find($state);
                                 if ($template) {
